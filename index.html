@@ -1,0 +1,673 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="메시에 목록 기반 성단·성운을 교과서 분류로 정리한 은하여행 수업용 도감과 은하 지도">
+<title>성운·성단 도감</title>
+<style>
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;font-size:14px}
+img{max-width:100%}
+[hidden]{display:none!important}
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Sans+KR:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: 관측 노트 같은 상단 헤더 + 탭(도감 / 은하 지도). 밤하늘을 위한 다크 단일 테마(교실 프로젝터용). */
+:root{
+  --sky:#0b0f1c; --panel:#121829; --panel2:#182036; --line:#263049;
+  --ink:#e6e9f2; --dim:#9aa3bb; --faint:#6b7591; --accent:#f2c46d;
+  --oc:#8fb8ff; --gc:#ffd38a; --em:#ff7a8a; --rf:#7fd4ff; --dk:#b49a86; --pn:#6ee0c0; --snr:#ffa45c;
+  --f-display:"Gowun Batang",ui-serif,"Apple SD Gothic Neo",serif;
+  --f-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  color-scheme:dark;
+}
+html,body{background:var(--sky);color:var(--ink)}
+body{font-family:var(--f-body);font-size:15px;line-height:1.55}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--sky)}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 48px}
+header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px 32px;border-bottom:1px solid var(--line);padding-bottom:18px}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.12em;color:var(--accent);text-transform:uppercase}
+h1{font-family:var(--f-display);font-weight:700;font-size:clamp(28px,5vw,44px);line-height:1.15;margin:6px 0 4px;text-wrap:balance}
+.lede{color:var(--dim);margin:0;max-width:60ch}
+nav.tabs{display:flex;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:4px}
+nav.tabs button{font:500 14px var(--f-body);color:var(--dim);background:none;border:0;border-radius:999px;padding:8px 16px;cursor:pointer}
+nav.tabs button[aria-selected="true"]{background:var(--accent);color:#1a1405}
+button:focus-visible,.card:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* 필터 */
+.toolbar{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;margin:20px 0 18px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:500 13px var(--f-body);color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:6px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:7px}
+.chip .dot{width:9px;height:9px;border-radius:50%;background:var(--c,var(--dim))}
+.chip[aria-pressed="true"]{border-color:var(--c,var(--accent));background:var(--panel2)}
+.chip .n{font-family:var(--f-mono);font-size:11px;color:var(--faint)}
+.search{flex:1 1 200px;min-width:0;max-width:320px}
+.search input,.toolbar select{width:100%;font:14px var(--f-body);color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 12px}
+.toolbar select{width:auto}
+.count{font-family:var(--f-mono);font-size:12px;color:var(--faint);margin-left:auto}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;text-align:left;padding:0;color:inherit;font:inherit;transition:border-color .15s,transform .15s}
+.card:hover{border-color:var(--c);transform:translateY(-2px)}
+.card canvas{display:block;width:100%;aspect-ratio:4/3;background:#05070e}
+.card .body{padding:10px 12px 12px;display:flex;flex-direction:column;gap:3px}
+.idline{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.mid{font-family:var(--f-mono);font-size:13px;color:var(--accent)}
+.tag{font-size:11px;font-weight:600;letter-spacing:.04em;color:var(--c);border:1px solid var(--c);border-radius:4px;padding:1px 6px;white-space:nowrap}
+.card h3{font-family:var(--f-display);font-size:18px;margin:0;line-height:1.3}
+.card .sub{font-size:12px;color:var(--dim)}
+.badge-x{font-size:10px;color:var(--faint);font-family:var(--f-mono)}
+.empty{color:var(--dim);padding:40px 0;text-align:center}
+
+/* 상세 */
+dialog{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:14px;padding:0;width:min(760px,calc(100vw - 32px));max-height:calc(100vh - 40px)}
+dialog::backdrop{background:rgba(3,5,12,.72)}
+.dlg{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr)}
+.dlg canvas{width:100%;height:100%;min-height:240px;display:block;background:#05070e}
+.dlg .info{padding:20px 22px 22px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.dlg h2{font-family:var(--f-display);font-size:28px;margin:0;line-height:1.2;text-wrap:balance}
+.dlg .en{color:var(--dim);font-size:13px;margin-top:-6px}
+.dlg p{margin:0}
+dl.facts{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:0;font-size:14px}
+dl.facts dt{color:var(--faint);font-size:12px;padding-top:2px}
+dl.facts dd{margin:0;font-variant-numeric:tabular-nums}
+.mono{font-family:var(--f-mono);font-size:13px}
+.close{position:absolute;top:10px;right:10px;width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:rgba(11,15,28,.8);color:var(--ink);font-size:18px;cursor:pointer}
+.vis{font-size:13px;border-radius:8px;padding:8px 10px;background:var(--panel2)}
+.vis b{color:var(--accent)}
+.navbtns{display:flex;gap:8px;margin-top:auto}
+.navbtns button,.btn{font:500 13px var(--f-body);color:var(--ink);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 12px;cursor:pointer}
+.photo{display:flex;align-items:center;justify-content:space-between;gap:10px;text-decoration:none;color:#1a1405;background:var(--accent);border-radius:8px;padding:10px 14px;font-weight:600;font-size:14px}
+.photo small{font-weight:400;font-size:12px;opacity:.75}
+.illu{position:absolute;left:10px;bottom:10px;font-size:11px;color:var(--dim);background:rgba(5,7,14,.75);padding:2px 8px;border-radius:4px}
+.btn.primary{background:var(--accent);color:#1a1405;border-color:var(--accent)}
+
+/* 은하 지도 */
+.mapwrap{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:18px;margin-top:20px}
+.mapbox{background:#04060c;border:1px solid var(--line);border-radius:12px;overflow:hidden;position:relative}
+.mapbox canvas{display:block;width:100%;height:auto;cursor:crosshair;touch-action:none}
+.zoom{display:inline-flex;gap:4px;align-items:center}
+.zoom .btn{min-width:36px;padding:8px 10px}
+.zoom output{font-family:var(--f-mono);font-size:12px;color:var(--dim);min-width:40px;text-align:center}
+.mapctl{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 12px;border-top:1px solid var(--line);background:var(--panel)}
+.mapctl .lg{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--dim);margin-left:auto}
+.mapctl .lg span{display:inline-flex;align-items:center;gap:5px}
+.mapctl .lg i{width:9px;height:9px;border-radius:50%;display:inline-block}
+.pickbar{display:flex;gap:8px;margin:8px 0}
+.pickbar input{flex:1;min-width:0;font:14px var(--f-body);color:var(--ink);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.plist{list-style:none;margin:0;padding:0;max-height:240px;overflow-y:auto;border:1px solid var(--line);border-radius:8px}
+.plist li label{display:flex;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid var(--line);cursor:pointer;font-size:14px}
+.plist li:last-child label{border-bottom:0}
+.plist li label:hover{background:var(--panel2)}
+.plist input{accent-color:var(--accent);width:16px;height:16px;flex:none}
+.plist .dot{width:9px;height:9px;border-radius:50%;flex:none}
+.plist .t{margin-left:auto;font-size:12px;color:var(--dim);white-space:nowrap}
+.plist .none{padding:10px;color:var(--dim);font-size:13px}
+.picked{margin-top:12px;display:flex;flex-direction:column;gap:8px}
+.pickhead{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.pickhead span{display:flex;gap:6px;flex-wrap:wrap}
+.btn:disabled{opacity:.45;cursor:default}
+.pchips{display:flex;flex-wrap:wrap;gap:6px}
+.pchip{font:13px var(--f-body);color:var(--ink);background:var(--panel2);border:1px solid var(--c);border-radius:999px;padding:4px 8px 4px 10px;cursor:pointer;display:inline-flex;gap:6px;align-items:center}
+.pchip span{color:var(--dim)}
+.dimopt{font-size:13px;color:var(--dim);display:flex;gap:6px;align-items:center}
+.tip{position:absolute;pointer-events:none;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:4px 8px;font-size:12px;white-space:nowrap}
+aside.study{display:flex;flex-direction:column;gap:14px;min-width:0}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+.panel h3{font-family:var(--f-display);font-size:19px;margin:0 0 8px}
+.panel p{margin:0 0 8px;color:var(--dim);font-size:14px}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{border-bottom:1px solid var(--line);padding:7px 6px;text-align:left;vertical-align:top}
+th{color:var(--faint);font-weight:500;font-size:12px}
+td.oc{color:var(--oc)} td.gc{color:var(--gc)}
+.stat{display:flex;gap:10px;flex-wrap:wrap}
+.stat div{flex:1 1 120px;background:var(--panel2);border-radius:8px;padding:10px 12px}
+.stat b{display:block;font-family:var(--f-mono);font-size:20px;font-variant-numeric:tabular-nums}
+.stat span{font-size:12px;color:var(--dim)}
+
+footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--line);color:var(--faint);font-size:12px;display:flex;flex-direction:column;gap:4px}
+footer a{color:var(--dim)}
+
+@media (max-width:820px){.mapwrap{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:620px){.dlg{grid-template-columns:minmax(0,1fr)}.dlg canvas{aspect-ratio:4/3;min-height:0;height:auto}.count{margin-left:0}nav.tabs{width:100%}nav.tabs button{flex:1;padding:8px 6px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="eyebrow">은하여행 · 메시에 목록 기반</div>
+      <h1>성운·성단 도감</h1>
+      <p class="lede">우리 은하 곳곳에 흩어진 성단과 성운을 교과서 분류대로 모았어요. 카드를 누르면 자세한 정보와 서울에서 관측하기 좋은 계절을 볼 수 있어요.</p>
+    </div>
+    <nav class="tabs" role="tablist">
+      <button role="tab" id="tab-atlas" aria-selected="true" data-view="atlas">도감</button>
+      <button role="tab" id="tab-map" aria-selected="false" data-view="map">은하 지도</button>
+    </nav>
+  </header>
+
+  <p class="lede" style="margin-top:14px;font-size:13px">카드의 그림은 분류별 특징을 나타낸 일러스트예요. 거리와 실제 사진은 카드를 눌러 <b style="color:var(--accent)">거리·사진 보기</b> 링크에서 확인하세요.</p>
+  <section id="view-atlas">
+    <div class="toolbar">
+      <div class="chips" id="chips"></div>
+      <div class="search"><input id="q" type="search" placeholder="이름, 번호, 별자리 검색" aria-label="검색"></div>
+      <select id="season" aria-label="관측 계절">
+        <option value="">모든 계절</option><option>봄</option><option>여름</option><option>가을</option><option>겨울</option>
+      </select>
+      <span class="count" id="count"></span>
+    </div>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <section id="view-map" hidden>
+    <div class="mapwrap">
+      <div class="mapbox">
+        <canvas id="map" width="900" height="900" aria-label="우리 은하 속 성단과 성운의 위치"></canvas>
+        <div class="tip" id="tip" hidden></div>
+        <div class="mapctl">
+          <button class="btn primary" id="viewTop">위에서 본 은하</button>
+          <button class="btn" id="viewSide">옆에서 본 은하</button>
+          <span class="zoom"><button class="btn" id="zOut" aria-label="축소">−</button><output id="zLevel">×1.0</output><button class="btn" id="zIn" aria-label="확대">+</button><button class="btn" id="zReset">원래 크기</button><button class="btn" id="zSun">태양 주변</button></span>
+          <div class="lg" id="legend"></div>
+        </div>
+      </div>
+      <aside class="study">
+        <div class="panel">
+          <h3>천체 골라 보기</h3>
+          <p>이름, 번호, 별자리, 분류로 찾아서 체크하면 지도에 나타나요. 검색을 바꿔 가며 계속 더할 수 있어요.</p>
+          <div class="pickbar"><input id="mq" type="search" placeholder="예: 방출성운, 오리온, M42" aria-label="지도 천체 검색"><button class="btn" id="mAll">결과 모두 체크</button></div>
+          <ul class="plist" id="mList"></ul>
+          <div class="picked">
+            <div class="pickhead"><b id="mCount">선택한 천체 0개</b><span><button class="btn" id="mFit">모아 보기</button><button class="btn" id="mClear">모두 해제</button></span></div>
+            <div class="pchips" id="mChips"></div>
+            <label class="dimopt"><input type="checkbox" id="mDim"> 선택하지 않은 천체도 흐리게 표시</label>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>지도에서 찾아볼 것</h3>
+          <p id="mapExplain"></p>
+          <div class="stat" id="mapStats"></div>
+        </div>
+        <div class="panel">
+          <h3>산개성단과 구상성단 비교</h3>
+          <div class="tbl"><table>
+            <thead><tr><th></th><th>산개성단</th><th>구상성단</th></tr></thead>
+            <tbody>
+              <tr><th>별의 수</th><td class="oc">수십~수천 개</td><td class="gc">수만~수십만 개</td></tr>
+              <tr><th>모양</th><td class="oc">불규칙, 엉성함</td><td class="gc">공 모양, 중심이 빽빽함</td></tr>
+              <tr><th>별의 나이</th><td class="oc">젊음</td><td class="gc">매우 늙음</td></tr>
+              <tr><th>별의 색</th><td class="oc">파란색 별이 많음</td><td class="gc">붉은색 별이 많음</td></tr>
+              <tr><th>분포 위치</th><td class="oc">은하 원반(나선팔)</td><td class="gc">헤일로, 은하 중심부</td></tr>
+              <tr><th>종족</th><td class="oc">종족 Ⅰ</td><td class="gc">종족 Ⅱ</td></tr>
+            </tbody>
+          </table></div>
+        </div>
+        <div class="panel">
+          <h3>주의</h3>
+          <p style="margin:0">천체의 위치는 실제 방향(은경·은위)과 거리로 계산했어요. 다만 거리가 대략값이라 점의 위치도 오차가 있어요. 나선팔은 실제 위치가 아니라 설명을 위해 그린 모양이에요. 실제 우리 은하는 막대 나선 은하이고, 태양은 큰 팔 사이의 작은 오리온 팔에 있어요.</p>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+
+  <footer>
+    <span>목록: 메시에 목록(M1~M110 중 성단·성운 67개) + 교과서·활동지에 나오는 메시에 외 천체 9개. 메시에 목록의 은하 39개와 M24·M40·M73(별 구름·이중성·별 무리)은 제외했어요.</span>
+    <span>거리: NASA 페이지에 거리가 있는 천체는 상세 창의 NASA 링크에서 확인하고, NASA 페이지가 없는 천체는 <a href="https://en.wikipedia.org/wiki/Messier_object" target="_blank" rel="noopener">영어 위키백과</a> 값을 상세 창에 표시했어요. 좌표·등급·설명과 은하 지도의 점 위치는 Claude가 일반 천문 자료를 바탕으로 정리한 대략값이에요.</span>
+    <span>참고: <a href="https://science.nasa.gov/mission/hubble/science/explore-the-night-sky/hubble-messier-catalog/" target="_blank" rel="noopener">NASA 허블 메시에 카탈로그</a> · <a href="https://github.com/mattiaverga/OpenNGC" target="_blank" rel="noopener">OpenNGC</a></span>
+  </footer>
+</div>
+
+<dialog id="dlg" aria-labelledby="dName">
+  <div style="position:relative">
+    <button class="close" id="dClose" aria-label="닫기">×</button>
+    <div class="dlg">
+      <div style="position:relative;min-width:0"><canvas id="dImg" width="480" height="480"></canvas><span class="illu">분류 특징을 나타낸 그림</span></div>
+      <div class="info">
+        <div class="idline"><span class="mid" id="dId"></span><span class="tag" id="dTag"></span></div>
+        <h2 id="dName"></h2>
+        <div class="en" id="dEn"></div>
+        <p id="dNote"></p>
+        <dl class="facts" id="dFacts"></dl>
+        <div class="vis" id="dVis"></div>
+        <a class="photo" id="dPhoto" href="#" target="_blank" rel="noopener"></a>
+        <div class="navbtns">
+          <button id="dPrev">← 이전</button>
+          <button id="dMap">은하 지도에서 보기</button>
+          <button id="dNext">다음 →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</dialog>
+
+<script>
+const TYPES={
+  oc:{ko:"산개성단",c:"--oc"}, gc:{ko:"구상성단",c:"--gc"},
+  em:{ko:"방출성운",c:"--em"}, rf:{ko:"반사성운",c:"--rf"}, dk:{ko:"암흑성운",c:"--dk"},
+  pn:{ko:"행성상 성운",c:"--pn"}, snr:{ko:"초신성 잔해",c:"--snr"}
+};
+const CON={Sco:"전갈자리",Sct:"방패자리",Sgr:"궁수자리",Cyg:"백조자리",Per:"페르세우스자리",Gem:"쌍둥이자리",Aur:"마차부자리",CMa:"큰개자리",Cnc:"게자리",Tau:"황소자리",Pup:"고물자리",Hya:"바다뱀자리",Mon:"외뿔소자리",Cas:"카시오페이아자리",Aqr:"물병자리",CVn:"사냥개자리",Ser:"뱀자리",Oph:"뱀주인자리",Her:"헤라클레스자리",Peg:"페가수스자리",Cap:"염소자리",Com:"머리털자리",Lyr:"거문고자리",Sge:"화살자리",Lep:"토끼자리",Vul:"여우자리",Ori:"오리온자리",UMa:"큰곰자리",Cen:"센타우루스자리",Car:"용골자리",Cru:"남십자자리",Eri:"에리다누스자리"};
+// [번호, 한글 이름, 영문 이름, 분류, 별자리, 적경 "hh mm.m", 적위(도), 겉보기등급, 거리(광년), 설명, 메시에 외 여부]
+const RAW=[
+["M1","게 성운","Crab Nebula","snr","Tau","05 34.5",22.02,8.4,6500,"1054년 중국과 일본의 기록에 남은 초신성 폭발의 잔해예요. 중심에는 1초에 30번 도는 펄서가 있어요."],
+["M2","M2","Messier 2","gc","Aqr","21 33.5",-0.82,6.5,37500,"물병자리에 있는 크고 밝은 구상성단이에요. 약 15만 개의 별이 모여 있어요."],
+["M3","M3","Messier 3","gc","CVn","13 42.2",28.38,6.2,33900,"약 50만 개의 별이 모인 구상성단으로, 밝기가 변하는 변광성이 특히 많아요."],
+["M4","M4","Messier 4","gc","Sco","16 23.6",-26.53,5.6,7200,"지구에서 가장 가까운 구상성단 중 하나예요. 전갈자리의 붉은 별 안타레스 바로 옆에 있어요."],
+["M5","M5","Messier 5","gc","Ser","15 18.6",2.08,5.6,24500,"우리 은하에서 나이가 가장 많은 구상성단 가운데 하나로 꼽혀요."],
+["M6","나비 성단","Butterfly Cluster","oc","Sco","17 40.1",-32.22,4.2,1600,"별들의 배열이 날개를 편 나비처럼 보이는 산개성단이에요."],
+["M7","프톨레마이오스 성단","Ptolemy Cluster","oc","Sco","17 53.9",-34.82,3.3,980,"맨눈으로도 보이는 밝은 산개성단이에요. 2세기 천문학자 프톨레마이오스가 기록했어요."],
+["M8","석호 성운","Lagoon Nebula","em","Sgr","18 03.8",-24.38,6.0,4100,"새로운 별이 태어나는 거대한 수소 구름이에요. 가운데를 가로지르는 어두운 띠가 호수처럼 보여요."],
+["M9","M9","Messier 9","gc","Oph","17 19.2",-18.52,7.7,25800,"은하 중심에 가까이 있는 구상성단이에요. 앞쪽 성간 먼지 때문에 한쪽이 어둡게 보여요."],
+["M10","M10","Messier 10","gc","Oph","16 57.1",-4.10,6.6,14300,"뱀주인자리의 밝은 구상성단으로, 근처의 M12와 함께 망원경으로 보기 좋아요."],
+["M11","야생오리 성단","Wild Duck Cluster","oc","Sct","18 51.1",-6.27,6.3,6200,"별이 매우 빽빽한 산개성단이에요. 밝은 별들의 배열이 V자로 나는 오리 떼처럼 보여요."],
+["M12","M12","Messier 12","gc","Oph","16 47.2",-1.95,6.7,15700,"별들이 비교적 성기게 모인 구상성단이에요."],
+["M13","헤라클레스자리 구상성단","Hercules Globular Cluster","gc","Her","16 41.7",36.47,5.8,22200,"북반구 하늘에서 가장 밝은 구상성단이에요. 1974년 아레시보 전파 망원경이 외계 지적 생명체를 향한 메시지를 이 방향으로 보냈어요."],
+["M14","M14","Messier 14","gc","Oph","17 37.6",-3.25,7.6,30300,"뱀주인자리의 구상성단으로, 1938년 이 안에서 신성이 관측되었어요."],
+["M15","M15","Messier 15","gc","Peg","21 30.0",12.17,6.2,33600,"중심부가 아주 빽빽한 구상성단이에요. 안에 행성상 성운이 하나 들어 있어요."],
+["M16","독수리 성운","Eagle Nebula","em","Ser","18 18.8",-13.78,6.0,7000,"허블 우주 망원경이 찍은 '창조의 기둥'이 있는 곳이에요. 젊은 산개성단과 별 탄생 구름이 함께 있어요."],
+["M17","오메가 성운","Omega Nebula","em","Sgr","18 20.8",-16.18,6.0,5000,"우리 은하에서 가장 밝고 활발한 별 탄생 지역 중 하나예요. 백조 성운이라고도 불러요."],
+["M18","M18","Messier 18","oc","Sgr","18 19.9",-17.13,7.5,4900,"오메가 성운 근처에 있는 작은 산개성단이에요."],
+["M19","M19","Messier 19","gc","Oph","17 02.6",-26.27,6.8,28700,"한쪽으로 살짝 납작해 보이는 구상성단이에요. 은하 중심과 가까워요."],
+["M20","삼렬 성운","Trifid Nebula","em","Sgr","18 02.6",-23.03,6.3,5200,"새로운 별이 태어나고 있는 곳이에요. 붉은 방출성운, 푸른 반사성운, 그리고 성운을 셋으로 가르는 암흑대를 한 번에 볼 수 있어요."],
+["M21","M21","Messier 21","oc","Sgr","18 04.6",-22.50,6.5,4250,"나이가 수백만 년밖에 안 되는 젊은 산개성단이에요."],
+["M22","M22","Messier 22","gc","Sgr","18 36.4",-23.90,5.1,10600,"가장 밝은 구상성단 중 하나예요. 안에서 행성상 성운과 블랙홀 후보가 발견되었어요."],
+["M23","M23","Messier 23","oc","Sgr","17 56.8",-19.02,6.9,2150,"쌍안경으로 보기 좋은, 넓게 퍼진 산개성단이에요."],
+["M25","M25","Messier 25","oc","Sgr","18 31.6",-19.25,4.6,2000,"맨눈으로 희미하게 보이는 산개성단이에요."],
+["M26","M26","Messier 26","oc","Sct","18 45.2",-9.40,8.0,5000,"방패자리의 작은 산개성단이에요."],
+["M27","아령 성운","Dumbbell Nebula","pn","Vul","19 59.6",22.72,7.5,1360,"처음으로 발견된 행성상 성운이에요. 별이 죽어 가면서 내뿜은 가스가 아령 모양으로 퍼져 있어요."],
+["M28","M28","Messier 28","gc","Sgr","18 24.5",-24.87,6.8,17900,"궁수자리 구상성단으로, 처음으로 밀리초 펄서가 발견된 구상성단이에요."],
+["M29","M29","Messier 29","oc","Cyg","20 23.9",38.53,7.1,4000,"백조자리의 작은 산개성단으로 냉각탑 성단이라는 별명이 있어요."],
+["M30","M30","Messier 30","gc","Cap","21 40.4",-23.18,7.2,26100,"중심부가 매우 빽빽하게 뭉친 구상성단이에요."],
+["M34","M34","Messier 34","oc","Per","02 42.0",42.78,5.5,1400,"어두운 곳에서는 맨눈으로도 보이는 페르세우스자리의 산개성단이에요."],
+["M35","M35","Messier 35","oc","Gem","06 08.9",24.33,5.3,2800,"겨울밤 쌍둥이자리 발끝에 있는 크고 밝은 산개성단이에요."],
+["M36","M36","Messier 36","oc","Aur","05 36.1",34.13,6.3,4100,"마차부자리의 산개성단 삼형제(M36·M37·M38) 중 하나예요."],
+["M37","M37","Messier 37","oc","Aur","05 52.4",32.55,6.2,4500,"마차부자리 산개성단 중 가장 밝고 별이 많아요."],
+["M38","M38","Messier 38","oc","Aur","05 28.4",35.83,7.4,4200,"별들이 십자 모양으로 늘어선 마차부자리의 산개성단이에요."],
+["M39","M39","Messier 39","oc","Cyg","21 32.2",48.43,4.6,800,"넓게 퍼져 있어 쌍안경으로 보기 좋은 산개성단이에요."],
+["M41","M41","Messier 41","oc","CMa","06 46.0",-20.73,4.5,2300,"가장 밝은 별 시리우스 남쪽에 있는 산개성단이에요."],
+["M42","오리온 대성운","Orion Nebula","em","Ori","05 35.4",-5.45,4.0,1340,"맨눈으로도 보이는 가장 유명한 별 탄생 지역이에요. 중심의 젊은 별 네 개(트라페지움)가 성운을 빛나게 해요."],
+["M43","드메랑 성운","De Mairan's Nebula","em","Ori","05 35.6",-5.27,9.0,1340,"오리온 대성운 바로 옆에 붙어 있는 작은 방출성운으로, 오리온 대성운과 같은 거대한 구름 속에서 새로운 별이 태어나고 있어요."],
+["M44","프레세페 성단","Praesepe (Beehive Cluster)","oc","Cnc","08 40.1",19.98,3.7,577,"맨눈으로 뿌옇게 보이는 산개성단이에요. 벌집 성단이라고도 불러요."],
+["M45","플레이아데스 성단","Pleiades","oc","Tau","03 47.0",24.12,1.6,444,"맨눈으로 6~7개의 별이 보이는 산개성단이에요. 우리말로 좀생이별이라 하고, 별 주변에 푸른 반사성운이 있어요."],
+["M46","M46","Messier 46","oc","Pup","07 41.8",-14.82,6.0,5400,"별이 많은 산개성단이에요. 앞쪽에 행성상 성운 NGC 2438이 겹쳐 보여요."],
+["M47","M47","Messier 47","oc","Pup","07 36.6",-14.50,4.2,1600,"밝은 별 몇 개가 눈에 띄는 성긴 산개성단이에요."],
+["M48","M48","Messier 48","oc","Hya","08 13.8",-5.80,5.5,1500,"바다뱀자리에 있는 넓은 산개성단이에요."],
+["M50","M50","Messier 50","oc","Mon","07 03.2",-8.33,5.9,3000,"외뿔소자리에 있는 하트 모양의 산개성단이에요."],
+["M52","M52","Messier 52","oc","Cas","23 24.2",61.58,7.3,5000,"카시오페이아자리에 있는 별이 많은 산개성단이에요."],
+["M53","M53","Messier 53","gc","Com","13 12.9",18.17,7.6,58000,"은하 중심에서 멀리 떨어진 헤일로에 있는 구상성단이에요."],
+["M54","M54","Messier 54","gc","Sgr","18 55.1",-30.48,7.6,87400,"우리 은하가 아니라 이웃한 궁수자리 왜소 타원은하에 속한 구상성단이에요. 메시에 목록에서 우리 은하 밖에 있는 첫 구상성단으로 확인되었어요."],
+["M55","M55","Messier 55","gc","Sgr","19 40.0",-30.97,6.3,17600,"크고 성긴 구상성단이에요. 한국에서는 남쪽 하늘 낮게 보여요."],
+["M56","M56","Messier 56","gc","Lyr","19 16.6",30.18,8.3,32900,"거문고자리의 작고 희미한 구상성단이에요."],
+["M57","고리 성운","Ring Nebula","pn","Lyr","18 53.6",33.03,8.8,2300,"반지 모양의 행성상 성운이에요. 가운데에 별의 마지막 모습인 백색 왜성이 있어요."],
+["M62","M62","Messier 62","gc","Oph","17 01.2",-30.12,6.5,22500,"은하 중심 가까이 있어 모양이 찌그러져 보이는 구상성단이에요."],
+["M67","M67","Messier 67","oc","Cnc","08 50.4",11.82,6.1,2700,"나이가 약 40억 년으로, 산개성단치고 아주 오래된 성단이에요."],
+["M68","M68","Messier 68","gc","Hya","12 39.5",-26.75,7.8,33300,"바다뱀자리의 구상성단이에요."],
+["M69","M69","Messier 69","gc","Sgr","18 31.4",-32.35,7.6,29700,"은하 중심 근처에 있는 구상성단이에요."],
+["M70","M70","Messier 70","gc","Sgr","18 43.2",-32.30,7.9,29300,"M69 근처에 있는 작은 구상성단이에요."],
+["M71","M71","Messier 71","gc","Sge","19 53.8",18.78,8.2,13000,"별이 성겨서 오랫동안 산개성단으로 오해받았던 구상성단이에요."],
+["M72","M72","Messier 72","gc","Aqr","20 53.5",-12.53,9.3,53400,"멀리 떨어진 희미한 구상성단이에요."],
+["M75","M75","Messier 75","gc","Sgr","20 06.1",-21.92,8.5,67500,"메시에 목록에서 가장 빽빽한 구상성단 중 하나예요."],
+["M76","작은 아령 성운","Little Dumbbell Nebula","pn","Per","01 42.4",51.57,10.1,2500,"아령 성운을 작게 줄여 놓은 듯한 행성상 성운이에요."],
+["M78","M78","Messier 78","rf","Ori","05 46.7",0.05,8.3,1350,"하늘에서 가장 밝은 반사성운 중 하나예요. 근처 별빛을 먼지가 반사해 푸르게 보여요."],
+["M79","M79","Messier 79","gc","Lep","05 24.5",-24.55,7.7,41100,"겨울 하늘에서 볼 수 있는 드문 구상성단이에요. 은하 중심의 반대쪽에 있어요."],
+["M80","M80","Messier 80","gc","Sco","16 17.0",-22.98,7.3,32600,"우리 은하에서 가장 빽빽한 구상성단 중 하나예요."],
+["M92","M92","Messier 92","gc","Her","17 17.1",43.13,6.4,26700,"M13 근처에 있는 밝은 구상성단으로, 아주 오래된 별들로 이루어져 있어요."],
+["M93","M93","Messier 93","oc","Pup","07 44.6",-23.87,6.0,3600,"고물자리의 밝은 산개성단이에요."],
+["M97","올빼미 성운","Owl Nebula","pn","UMa","11 14.8",55.02,9.9,2000,"두 개의 어두운 부분이 올빼미 눈처럼 보이는 행성상 성운이에요."],
+["M103","M103","Messier 103","oc","Cas","01 33.2",60.70,7.4,8500,"카시오페이아자리에 있는 작은 산개성단이에요."],
+["M107","M107","Messier 107","gc","Oph","16 32.5",-13.05,7.9,20900,"메시에 목록에 마지막으로 추가된 구상성단 가운데 하나예요."],
+["B33","말머리 성운","Horsehead Nebula (Barnard 33)","dk","Ori","05 40.9",-2.47,null,1375,"뒤쪽의 붉은 방출성운(IC 434)을 차가운 먼지 구름이 가려 말머리 모양의 그림자로 보이는 암흑성운이에요.",1],
+["NGC 869/884","이중 성단","Double Cluster","oc","Per","02 20.0",57.13,3.7,7500,"두 개의 산개성단이 나란히 붙어 있어요. 어두운 곳에서는 맨눈으로도 보여요.",1],
+["NGC 5139","오메가 센타우리","Omega Centauri","gc","Cen","13 26.8",-47.48,3.7,17100,"우리 은하에서 가장 크고 무거운 구상성단이에요. 약 1000만 개의 별이 모여 있어요.",1],
+["Mel 25","히아데스 성단","Hyades","oc","Tau","04 27.0",15.87,0.5,153,"지구에서 가장 가까운 산개성단 중 하나예요. 황소의 얼굴 V자 모양을 이뤄요. 근처의 밝은 별 알데바란은 성단에 속하지 않아요.",1],
+["NGC 7000","북아메리카 성운","North America Nebula","em","Cyg","20 59.3",44.33,4.0,2600,"모양이 북아메리카 대륙을 닮은 방출성운으로, 새로운 별이 태어나는 곳이에요. 백조자리 데네브 근처에 있어요.",1],
+["NGC 3372","카리나 성운","Carina Nebula","em","Car","10 45.1",-59.87,1.0,7500,"하늘에서 가장 크고 밝은 성운 중 하나로, 지금도 새로운 별이 활발하게 태어나는 곳이에요. 아주 무거운 별 에타 카리나이가 이 안에 있어요.",1],
+["Mel 20","알파성단","Alpha Persei Cluster (Melotte 20)","oc","Per","03 26.9",49.12,1.2,570,"페르세우스자리의 밝은 별 미르파크(알파별)를 둘러싼 넓은 산개성단이에요. 너무 넓게 퍼져 있어 망원경보다 쌍안경으로 보기 좋아요.",1],
+["IC 2118","마귀할멈성운","Witch Head Nebula (IC 2118)","rf","Eri","05 06.9",-7.22,null,900,"옆에서 본 마녀의 얼굴처럼 생긴 반사성운이에요. 바로 옆의 밝은 별 리겔의 빛을 먼지가 반사해서 푸르게 보여요. 매우 희미해서 사진으로만 볼 수 있어요.",1],
+["C99","석탄자루 성운","Coalsack Nebula","dk","Cru","12 50.0",-62.50,null,600,"맨눈으로 은하수 속 검은 구멍처럼 보이는 암흑성운이에요. 남십자자리 옆에 있어요.",1]
+];
+const LAT=37.57, R0=26700;
+// NASA 허블 메시에 페이지가 없는 천체: 영어 위키백과 값(Messier object 목록, IC 2118·Coalsack Nebula 문서, 2026-10-21 확인)
+const WIKI_DIST={M6:1600,M18:4900,M21:4250,M23:2150,M25:2000,M26:5000,M29:7200,M34:1500,M36:4100,M37:4511,M38:4200,M39:824,M41:2300,M47:1600,M50:3200,M52:5000,M93:3600,M97:2030,M103:10000,"IC 2118":900,"C99":587};
+// 연결된 NASA 페이지에 적힌 거리(지도 위치 계산용, 화면에는 표시 안 함)
+const NASA_DIST={"B33":1600,"Mel 25":150,"NGC 869/884":7000,"NGC 7000":1500,"NGC 5139":16000,"NGC 3372":7500,"Mel 20":600};
+const EXTRA_LINK={
+ "B33":["https://science.nasa.gov/asset/hubble/the-horsehead-nebula","NASA 허블 사진"],
+ "NGC 5139":["https://science.nasa.gov/asset/hubble/colorful-stars-galore-inside-globular-star-cluster-omega-centauri","NASA 허블 사진"],
+ "NGC 3372":["https://science.nasa.gov/missions/hubble/hubbles-sparkling-new-view-of-the-carina-nebula","NASA 허블 사진"],
+ "NGC 869/884":["https://science.nasa.gov/image-article/apod-2023-july-7-the-double-cluster-in-perseus/","NASA 오늘의 천문 사진(APOD)"],
+ "Mel 25":["https://science.nasa.gov/image-article/apod-2020-january-22-the-hyades-star-cluster/","NASA 오늘의 천문 사진(APOD)"],
+ "NGC 7000":["https://science.nasa.gov/image-article/apod-2022-september-8-north-america-and-the-pelican/","NASA 오늘의 천문 사진(APOD)"],
+ "C99":["https://science.nasa.gov/image-article/apod-2000-june-18-the-milky-way-near-the-southern-cross/","NASA 오늘의 천문 사진(APOD) · 남십자자리 옆 어두운 부분"],
+ "Mel 20":["https://apod.nasa.gov/apod/ap071109.html","NASA 오늘의 천문 사진(APOD) · 홀스 혜성과 함께 찍힌 사진"],
+ "IC 2118":["https://science.nasa.gov/image-article/apod-2023-october-4-ic-2118-the-witch-head-nebula/","NASA 오늘의 천문 사진(APOD)"]
+};
+const HUBBLE=new Set([1,2,3,4,5,7,8,9,10,11,12,13,14,15,16,17,19,20,22,27,28,30,35,42,43,44,45,46,48,53,54,55,56,57,62,67,68,69,70,71,72,75,76,78,79,80,92,107]);
+const D2R=Math.PI/180;
+function raDeg(s){const [h,m]=s.split(" ").map(Number);return (h+m/60)*15}
+function galactic(ra,dec){
+  const aG=192.85948*D2R,dG=27.12825*D2R,lN=122.93192*D2R;
+  const a=ra*D2R,d=dec*D2R;
+  const sb=Math.sin(d)*Math.sin(dG)+Math.cos(d)*Math.cos(dG)*Math.cos(a-aG);
+  const b=Math.asin(sb);
+  const y=Math.cos(d)*Math.sin(a-aG);
+  const x=Math.sin(d)*Math.cos(dG)-Math.cos(d)*Math.sin(dG)*Math.cos(a-aG);
+  let l=(lN-Math.atan2(y,x))/D2R; l=((l%360)+360)%360;
+  return {l,b:b/D2R};
+}
+function season(raH){ // 저녁 9시 무렵 남중하는 계절
+  if(raH>=8&&raH<14) return "봄";
+  if(raH>=14&&raH<20) return "여름";
+  if(raH>=20||raH<2) return "가을";
+  return "겨울";
+}
+const MONTH={봄:"3~5월",여름:"6~8월",가을:"9~11월",겨울:"12~2월"};
+const DATA=RAW.map((r,i)=>{
+  const ra=raDeg(r[5]); const g=galactic(ra,r[6]); const d=WIKI_DIST[r[0]]||NASA_DIST[r[0]]||r[8];
+  const cb=Math.cos(g.b*D2R);
+  return {i,id:r[0],ko:r[1],en:r[2],t:r[3],con:r[4],raStr:r[5],ra,dec:r[6],mag:r[7],dist:d,note:r[9],extra:!!r[10],
+    l:g.l,b:g.b, x:-d*cb*Math.sin(g.l*D2R), y:R0-d*cb*Math.cos(g.l*D2R), z:d*Math.sin(g.b*D2R),
+    season:season(ra/15), alt:90-Math.abs(LAT-r[6])};
+});
+const cssVar=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const tcol=t=>cssVar(TYPES[t].c);
+
+/* ---------- 천체 그림(분류별 모식 일러스트) ---------- */
+function rng(seed){let s=0;for(const ch of seed)s=(s*31+ch.charCodeAt(0))>>>0;return()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296}}
+function gauss(r){return (r()+r()+r()+r()-2)/2}
+function star(c,x,y,rad,col,a=1){
+  const g=c.createRadialGradient(x,y,0,x,y,rad*3);
+  g.addColorStop(0,`rgba(${col},${a})`);g.addColorStop(.3,`rgba(${col},${a*.45})`);g.addColorStop(1,`rgba(${col},0)`);
+  c.fillStyle=g;c.beginPath();c.arc(x,y,rad*3,0,7);c.fill();
+}
+function glow(c,x,y,r,col,a){const g=c.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,`rgba(${col},${a})`);g.addColorStop(1,`rgba(${col},0)`);c.fillStyle=g;c.beginPath();c.arc(x,y,r,0,7);c.fill()}
+function draw(cv,o){
+  const c=cv.getContext("2d"),W=cv.width,H=cv.height,R=rng(o.id),s=Math.min(W,H);
+  c.globalCompositeOperation="source-over";
+  c.fillStyle="#05070e";c.fillRect(0,0,W,H);
+  for(let k=0;k<120;k++){c.fillStyle=`rgba(200,210,255,${R()*.5})`;c.fillRect(R()*W,R()*H,R()<.9?1:1.6,R()<.9?1:1.6)}
+  c.globalCompositeOperation="lighter";
+  const cx=W/2,cy=H/2;
+  if(o.t==="oc"){
+    const n=o.id==="M45"?9:20+Math.floor(R()*40);
+    if(o.id==="M45")glow(c,cx,cy,s*.42,"90,140,255",.22);
+    for(let k=0;k<n;k++){const x=cx+gauss(R)*s*.38,y=cy+gauss(R)*s*.3;const big=R()<.18||o.id==="M45";star(c,x,y,big?s*.012+R()*s*.01:s*.004+R()*s*.004,R()<.75?"180,205,255":"255,240,220",.95)}
+  }else if(o.t==="gc"){
+    glow(c,cx,cy,s*.32,"255,210,150",.35);
+    for(let k=0;k<900;k++){const r=Math.abs(gauss(R))*s*.18*(R()<.2?2:1),a=R()*7;star(c,cx+Math.cos(a)*r,cy+Math.sin(a)*r,s*.0025+R()*s*.002,R()<.7?"255,220,170":"255,170,130",.6)}
+    glow(c,cx,cy,s*.1,"255,235,200",.6);
+  }else if(o.t==="em"){
+    for(let k=0;k<14;k++)glow(c,cx+gauss(R)*s*.3,cy+gauss(R)*s*.25,s*(.12+R()*.22),R()<.8?"255,70,110":"255,140,170",.18);
+    if(o.id==="M20")glow(c,cx+s*.1,cy-s*.28,s*.22,"80,140,255",.35);
+    c.globalCompositeOperation="source-over";
+    for(let k=0;k<5;k++){c.fillStyle="rgba(5,7,14,.55)";c.beginPath();c.ellipse(cx+gauss(R)*s*.3,cy+gauss(R)*s*.3,s*(.03+R()*.06),s*(.1+R()*.15),R()*3,0,7);c.fill()}
+    c.globalCompositeOperation="lighter";
+    for(let k=0;k<6;k++)star(c,cx+gauss(R)*s*.2,cy+gauss(R)*s*.2,s*.008,"220,235,255",.9);
+  }else if(o.t==="rf"){
+    for(let k=0;k<8;k++)glow(c,cx+gauss(R)*s*.2,cy+gauss(R)*s*.2,s*(.12+R()*.2),"90,160,255",.2);
+    star(c,cx,cy,s*.02,"230,240,255",1);star(c,cx+s*.12,cy-s*.08,s*.012,"230,240,255",.9);
+  }else if(o.t==="dk"){
+    if(o.id==="C99"){for(let k=0;k<1400;k++){c.fillStyle=`rgba(230,225,215,${R()*.6})`;c.fillRect(R()*W,R()*H,1.2,1.2)}glow(c,cx,cy,s*.6,"230,220,200",.18)}
+    else{for(let k=0;k<10;k++)glow(c,cx+s*.12+gauss(R)*s*.15,cy+gauss(R)*s*.35,s*.25,"255,60,90",.2)}
+    c.globalCompositeOperation="source-over";c.fillStyle="#05070e";
+    if(o.id==="B33"){c.beginPath();c.moveTo(cx-s*.5,cy+s*.5);c.lineTo(cx-s*.5,cy+s*.05);c.bezierCurveTo(cx-s*.2,cy+s*.06,cx-s*.12,cy+s*.02,cx-s*.08,cy-s*.1);c.bezierCurveTo(cx-s*.06,cy-s*.22,cx+s*.02,cy-s*.32,cx+s*.08,cy-s*.26);c.bezierCurveTo(cx+s*.16,cy-s*.18,cx+s*.08,cy-s*.08,cx+s*.03,cy+s*.02);c.bezierCurveTo(cx+s*.0,cy+s*.12,cx+s*.06,cy+s*.2,cx+s*.02,cy+s*.5);c.fill()}
+    else{const g=c.createRadialGradient(cx,cy,0,cx,cy,s*.3);g.addColorStop(0,"rgba(5,7,14,.97)");g.addColorStop(.7,"rgba(5,7,14,.85)");g.addColorStop(1,"rgba(5,7,14,0)");c.fillStyle=g;c.beginPath();c.ellipse(cx,cy,s*.32,s*.26,.4,0,7);c.fill()}
+    c.globalCompositeOperation="lighter";
+  }else if(o.t==="pn"){
+    const rr=s*(o.id==="M57"?.2:.17);
+    const elong=o.id==="M27"||o.id==="M76";
+    for(let k=0;k<60;k++){const a=R()*7,r=rr*(.85+R()*.3);glow(c,cx+Math.cos(a)*r*(elong?.75:1),cy+Math.sin(a)*r*(elong?1.25:1),s*.06,R()<.5?"80,230,190":"255,110,120",.12)}
+    glow(c,cx,cy,rr*.8,"80,200,255",.2);
+    if(o.id==="M97"){c.globalCompositeOperation="source-over";c.fillStyle="rgba(5,7,14,.6)";c.beginPath();c.arc(cx-rr*.35,cy-rr*.1,rr*.25,0,7);c.arc(cx+rr*.35,cy-rr*.1,rr*.25,0,7);c.fill();c.globalCompositeOperation="lighter"}
+    star(c,cx,cy,s*.008,"240,245,255",1);
+  }else if(o.t==="snr"){
+    glow(c,cx,cy,s*.25,"120,160,255",.35);
+    for(let k=0;k<70;k++){const a=R()*7,r=s*(.12+R()*.16);c.strokeStyle=`rgba(255,${120+R()*80|0},70,.5)`;c.lineWidth=1+R()*1.5;c.beginPath();c.moveTo(cx+Math.cos(a)*r*.5,cy+Math.sin(a)*r*.4);c.quadraticCurveTo(cx+Math.cos(a+.3)*r,cy+Math.sin(a+.3)*r*.8,cx+Math.cos(a+.1)*r*1.2,cy+Math.sin(a+.1)*r);c.stroke()}
+    star(c,cx,cy,s*.008,"240,245,255",1);
+  }
+  c.globalCompositeOperation="source-over";
+}
+
+/* ---------- 도감 ---------- */
+const state={types:new Set(),q:"",season:""};
+const chips=document.getElementById("chips"),grid=document.getElementById("grid");
+function buildChips(){
+  const all=document.createElement("button");all.className="chip";all.id="chip-all";all.setAttribute("aria-pressed","true");all.innerHTML=`전체 <span class="n">${DATA.length}</span>`;
+  all.onclick=()=>{state.types.clear();sync()};chips.append(all);
+  for(const [k,v] of Object.entries(TYPES)){
+    const b=document.createElement("button");b.className="chip";b.id="chip-"+k;b.dataset.t=k;b.style.setProperty("--c",`var(${v.c})`);
+    b.innerHTML=`<span class="dot"></span>${v.ko} <span class="n">${DATA.filter(d=>d.t===k).length}</span>`;
+    b.onclick=()=>{state.types.has(k)?state.types.delete(k):state.types.add(k);sync()};chips.append(b);
+  }
+}
+function sync(){
+  chips.querySelectorAll(".chip").forEach(b=>b.setAttribute("aria-pressed",b.dataset.t?state.types.has(b.dataset.t):state.types.size===0));
+  render();
+}
+let shown=[];
+function render(){
+  const q=state.q.trim().toLowerCase().replace(/\s/g,"");
+  shown=DATA.filter(d=>(!state.types.size||state.types.has(d.t))&&(!state.season||d.season===state.season)&&
+    (!q||(d.id+d.ko+d.en+CON[d.con]+TYPES[d.t].ko).toLowerCase().replace(/\s/g,"").includes(q)));
+  grid.innerHTML="";
+  document.getElementById("count").textContent=`${shown.length}개 천체`;
+  if(!shown.length){grid.innerHTML=`<p class="empty">조건에 맞는 천체가 없어요. 필터를 줄여 보세요.</p>`;return}
+  for(const d of shown){
+    const b=document.createElement("button");b.className="card";b.style.setProperty("--c",`var(${TYPES[d.t].c})`);
+    const cv=document.createElement("canvas");cv.width=320;cv.height=240;
+    b.append(cv);
+    b.insertAdjacentHTML("beforeend",`<div class="body"><div class="idline"><span class="mid">${d.id}</span><span class="tag">${TYPES[d.t].ko}</span></div><h3>${d.ko}</h3><div class="sub">${CON[d.con]}${d.extra?' · <span class="badge-x">메시에 외</span>':""}</div></div>`);
+    b.onclick=()=>openDetail(d.i);
+    grid.append(b);draw(cv,d);
+  }
+}
+document.getElementById("q").addEventListener("input",e=>{state.q=e.target.value;render()});
+document.getElementById("season").addEventListener("change",e=>{state.season=e.target.value;render()});
+
+/* ---------- 상세 ---------- */
+const dlg=document.getElementById("dlg");let cur=0;
+function fmtDec(v){const s=v<0?"−":"+";v=Math.abs(v);const d=Math.floor(v),m=Math.round((v-d)*60);return `${s}${d}° ${String(m).padStart(2,"0")}′`}
+function openDetail(i){
+  cur=i;const d=DATA[i];
+  document.getElementById("dId").textContent=d.id+(d.extra?"  ·  메시에 외":"");
+  const tg=document.getElementById("dTag");tg.textContent=TYPES[d.t].ko;tg.style.setProperty("--c",`var(${TYPES[d.t].c})`);
+  document.getElementById("dName").textContent=d.ko;
+  document.getElementById("dEn").textContent=d.en;
+  document.getElementById("dNote").textContent=d.note;
+  const where=d.t==="gc"?(Math.abs(d.z)>3000||Math.hypot(d.x,d.y)<10000?"헤일로 또는 은하 중심부":"은하 원반 근처"):"은하 원반";
+  document.getElementById("dFacts").innerHTML=`
+    <dt>별자리</dt><dd>${CON[d.con]}</dd>
+    ${WIKI_DIST[d.id]?`<dt>거리</dt><dd>약 ${d.dist.toLocaleString()}광년 <span style="color:var(--faint);font-size:12px">(위키백과)</span></dd>`:""}
+    <dt>겉보기 등급</dt><dd>${d.mag==null?(d.t==="dk"?"— (빛을 가리는 성운)":"— (매우 희미함)"):d.mag.toFixed(1)+"등급"+(d.mag<=6?" · 맨눈 가능":"")}</dd>
+    <dt>적경 / 적위</dt><dd class="mono">${d.raStr.replace(" ","h ")}m / ${fmtDec(d.dec)}</dd>
+    <dt>은하 속 위치</dt><dd>${where} · 은경 ${d.l.toFixed(0)}°, 은위 ${d.b>=0?"+":""}${d.b.toFixed(0)}°</dd>`;
+  const v=document.getElementById("dVis");
+  if(d.alt<=0)v.innerHTML=`<b>서울에서는 보이지 않아요.</b> 남반구 하늘의 천체예요.`;
+  else v.innerHTML=`<b>${d.season}철 저녁(${MONTH[d.season]})</b>에 보기 좋아요. 서울에서 가장 높이 뜰 때 고도 약 ${Math.round(d.alt)}°${d.alt<15?" — 남쪽 지평선에 아주 낮게 떠서 보기 어려워요.":"."}`;
+  draw(document.getElementById("dImg"),d);
+  const ph=document.getElementById("dPhoto"),mn=/^M(\d+)$/.exec(d.id);
+  if(mn&&HUBBLE.has(+mn[1])){ph.href=`https://science.nasa.gov/mission/hubble/science/explore-the-night-sky/hubble-messier-catalog/messier-${mn[1]}/`;ph.innerHTML=`거리·사진 보기 ↗<small>NASA 허블 메시에 카탈로그</small>`}
+  else if(mn){ph.href=`https://astro.kasi.re.kr/kor/pageView/6456`;ph.innerHTML=`메시에 목록 보기 ↗<small>한국천문연구원</small>`}
+  else{const x=EXTRA_LINK[d.id];ph.href=x[0];ph.innerHTML=`${NASA_DIST[d.id]?"거리·사진 보기":"사진 보기"} ↗<small>${x[1]}</small>`}
+  if(!dlg.open)dlg.showModal();
+}
+function step(k){const ids=shown.length?shown.map(s=>s.i):DATA.map(s=>s.i);let p=ids.indexOf(cur);p=p<0?0:(p+k+ids.length)%ids.length;openDetail(ids[p])}
+document.getElementById("dPrev").onclick=()=>step(-1);
+document.getElementById("dNext").onclick=()=>step(1);
+document.getElementById("dClose").onclick=()=>dlg.close();
+dlg.addEventListener("click",e=>{if(e.target===dlg)dlg.close()});
+dlg.addEventListener("keydown",e=>{if(e.key==="ArrowRight")step(1);if(e.key==="ArrowLeft")step(-1)});
+document.getElementById("dMap").onclick=()=>{dlg.close();showView("map");highlight=cur;picked.add(cur);renderPick();const [wx,wy]=worldOf(DATA[cur]);view.k=3;view.ox=mc.width/2-3*wx;view.oy=mc.height/2-3*wy;clampView();drawMap()};
+
+/* ---------- 은하 지도 ---------- */
+const mc=document.getElementById("map"),mx=mc.getContext("2d"),tip=document.getElementById("tip");
+let mode="top",highlight=null,pts=[];
+const view={k:1,ox:0,oy:0};
+const T=(x,y)=>[view.ox+view.k*x,view.oy+view.k*y];
+function clampView(){const W=mc.width,H=mc.height;view.k=Math.min(100,Math.max(1,view.k));view.ox=Math.min(0,Math.max(W-W*view.k,view.ox));view.oy=Math.min(0,Math.max(H-H*view.k,view.oy))}
+function zoomAt(f,px,py){const nk=Math.min(100,Math.max(1,view.k*f));view.ox=px-(px-view.ox)*nk/view.k;view.oy=py-(py-view.oy)*nk/view.k;view.k=nk;clampView();drawMap()}
+function resetView(){view.k=1;view.ox=0;view.oy=0}
+function worldOf(d){const W=mc.width,cx=W/2,cy=mc.height/2,sc=W/2/EXTENT;return mode==="top"?[cx+d.x*sc,cy+d.y*sc]:[cx-d.y*sc,cy-d.z*sc]}
+const EXTENT=95000;
+function galaxyBG(){
+  const W=mc.width,H=mc.height,cx=W/2,cy=H/2,sc=W/2/EXTENT,R=rng("milkyway");
+  mx.setTransform(1,0,0,1,0,0);mx.fillStyle="#04060c";mx.fillRect(0,0,W,H);
+  mx.setTransform(view.k,0,0,view.k,view.ox,view.oy);
+  mx.globalCompositeOperation="lighter";
+  if(mode==="top"){
+    glow(mx,cx,cy,50000*sc,"120,130,190",.12);
+    for(let arm=0;arm<4;arm++){
+      const off=arm*Math.PI/2+.3;
+      for(let k=0;k<1500;k++){const t=R()*3.6;const r=(5000*Math.exp(.32*t*2))*sc;if(r>52000*sc)continue;const a=off+t*1.6+gauss(R)*.18;const x=cx+Math.cos(a)*r+gauss(R)*900*sc,y=cy+Math.sin(a)*r+gauss(R)*900*sc;mx.fillStyle=`rgba(${R()<.7?"150,175,255":"255,220,190"},${.15+R()*.35})`;mx.fillRect(x,y,1.6/view.k,1.6/view.k)}
+    }
+    mx.save();mx.translate(cx,cy);mx.rotate(2.04);mx.scale(1,.42);glow(mx,0,0,11000*sc,"255,215,150",.55);mx.restore();
+    glow(mx,cx,cy,6000*sc,"255,230,190",.5);
+  }else{
+    mx.save();mx.translate(cx,cy);mx.scale(1,.035);glow(mx,0,0,52000*sc,"150,170,240",.5);mx.restore();
+    mx.save();mx.translate(cx,cy);mx.scale(1,.7);glow(mx,0,0,9000*sc,"255,215,150",.55);mx.restore();
+    mx.save();mx.translate(cx,cy);mx.scale(1,.012);glow(mx,0,0,45000*sc,"20,10,10",.0);mx.restore();
+  }
+  mx.globalCompositeOperation="source-over";
+  // 눈금
+  const k=view.k,stepR=k>=3?5000:25000;
+  mx.strokeStyle="rgba(150,160,190,.18)";mx.lineWidth=1/k;mx.setLineDash([3/k,5/k]);
+  mx.font=`${13/k}px IBM Plex Mono, monospace`;mx.fillStyle="rgba(150,160,190,.6)";mx.textAlign="left";
+  if(mode==="top")for(let r=stepR;r<=75000;r+=stepR){mx.beginPath();mx.arc(cx,cy,r*sc,0,7);mx.stroke();mx.fillText(`${(r/1000).toLocaleString()}천 광년`,cx+4/k,cy-r*sc-4/k)}
+  else{for(let z=-50000;z<=50000;z+=stepR){if(!z)continue;mx.beginPath();mx.moveTo(0,cy-z*sc);mx.lineTo(W,cy-z*sc);mx.stroke();mx.fillText(`${z>0?"+":""}${z/1000}천 광년`,(8-view.ox)/k,cy-z*sc-4/k)}}
+  mx.setLineDash([]);
+  mx.setTransform(1,0,0,1,0,0);
+  return {cx,cy,sc};
+}
+function drawMap(){
+  const {cx,cy,sc}=galaxyBG();
+  // 은하 중심
+  mx.fillStyle="rgba(255,240,210,.9)";mx.font="600 14px IBM Plex Sans KR, sans-serif";mx.textAlign="center";
+  {const [gx,gy]=T(cx,cy);mx.fillText("은하 중심",gx,gy-(mode==="top"?14:20));}
+  // 태양
+  const sx=cx, sy=mode==="top"?cy+R0*sc:cy;
+  const sxx=mode==="top"?sx:cx+R0*sc*-1; // 옆에서 볼 때: 태양을 왼쪽에 두고 은하 중심 방향을 오른쪽으로
+  pts=[];
+  for(const d of DATA){
+    let px,py;
+    if(mode==="top"){px=cx+d.x*sc;py=cy+d.y*sc}
+    else{px=cx+(-d.y)*sc;py=cy-d.z*sc}
+    pts.push({d,px:view.ox+view.k*px,py:view.oy+view.k*py,vis:!(picked.size&&!picked.has(d.i)&&!dimOthers)});
+  }
+  {const [ux,uy]=T(mode==="top"?sx:sxx, mode==="top"?sy:cy);
+   if(false){mx.save();mx.strokeStyle="rgba(242,196,109,.35)";mx.setLineDash([2,4]);mx.lineWidth=1;mx.font="12px IBM Plex Mono, monospace";mx.fillStyle="rgba(242,196,109,.85)";mx.textAlign="left";
+     for(const r of [100,250,500,1000,2000,5000,10000]){const rp=r*sc*view.k;if(rp<30||rp>1400)continue;mx.beginPath();mx.arc(ux,uy,rp,0,7);mx.stroke();mx.fillText(`태양에서 ${r.toLocaleString()}광년`,ux+rp*.71+4,uy-rp*.71-4)}
+     mx.restore()}}
+  for(const p of pts){
+    const col=tcol(p.d.t);const hi=highlight===p.d.i;const pk=picked.has(p.d.i);
+    if(!p.vis&&!hi)continue;
+    mx.fillStyle=col;mx.globalAlpha=picked.size?(pk||hi?1:.2):(highlight==null||hi?1:.55);
+    mx.beginPath();mx.arc(p.px,p.py,hi?8:p.d.t==="gc"?5:4.5,0,7);mx.fill();
+    if(pk&&!hi){mx.globalAlpha=1;mx.strokeStyle=col;mx.lineWidth=2;mx.beginPath();mx.arc(p.px,p.py,10,0,7);mx.stroke();mx.font="600 13px IBM Plex Sans KR, sans-serif";mx.textAlign="left";mx.fillStyle="#e6e9f2";const lb=p.d.ko!==p.d.id?p.d.id+" "+p.d.ko:p.d.id;if(p.px+14+mx.measureText(lb).width>mc.width-6){mx.textAlign="right";mx.fillText(lb,p.px-14,p.py+4)}else mx.fillText(lb,p.px+14,p.py+4)}
+    if(!hi&&!pk&&!picked.size&&view.k>=2.5){mx.font="12px IBM Plex Mono, monospace";mx.textAlign="left";mx.fillStyle="rgba(220,225,240,.85)";mx.fillText(view.k>=15&&p.d.ko!==p.d.id?p.d.id+" "+p.d.ko:p.d.id,p.px+8,p.py+4)}
+    if(hi){mx.strokeStyle="#fff";mx.lineWidth=2;mx.beginPath();mx.arc(p.px,p.py,14,0,7);mx.stroke();mx.font="600 15px IBM Plex Sans KR, sans-serif";mx.textAlign="left";mx.fillStyle="#fff";mx.fillText(`${p.d.id} ${p.d.ko!==p.d.id?p.d.ko:""}`,p.px+18,p.py+5)}
+  }
+  mx.globalAlpha=1;
+  const [tx,ty]=T(mode==="top"?sx:sxx, mode==="top"?sy:cy);
+  mx.fillStyle="#f2c46d";mx.beginPath();mx.arc(tx,ty,7,0,7);mx.fill();
+  mx.strokeStyle="#f2c46d";mx.lineWidth=1.5;mx.beginPath();mx.arc(tx,ty,12,0,7);mx.stroke();
+  mx.font="600 14px IBM Plex Sans KR, sans-serif";mx.textAlign="center";mx.fillStyle="#f2c46d";mx.fillText("태양(우리)",tx,ty+(mode==="top"?30:-18));
+  mx.textAlign="left";
+  mx.fillStyle="rgba(200,205,225,.7)";mx.font="13px IBM Plex Sans KR, sans-serif";
+  mx.fillText(mode==="top"?"우리 은하를 북쪽 위에서 내려다본 모습(모식도)":"우리 은하를 원반 옆에서 본 모습(모식도)",14,24);
+  mx.fillStyle="rgba(200,205,225,.55)";mx.font="12px IBM Plex Sans KR, sans-serif";
+  mx.fillText("마우스 휠·두 손가락으로 확대, 끌어서 이동",14,44);
+  document.getElementById("zLevel").textContent="×"+(view.k<10?view.k.toFixed(1):Math.round(view.k));
+  mc.style.cursor=view.k>1?"grab":"crosshair";
+  explain();
+}
+function explain(){
+  const gc=DATA.filter(d=>d.t==="gc"),oc=DATA.filter(d=>d.t==="oc");
+  const avg=a=>Math.round(a.reduce((s,d)=>s+d.dist,0)/a.length);
+  const avgZ=a=>Math.round(a.reduce((s,d)=>s+Math.abs(d.z),0)/a.length);
+  document.getElementById("mapExplain").textContent=mode==="top"
+    ?"파란 점(산개성단)과 성운은 태양 주변의 은하 원반에 몰려 있어요. 노란 점(구상성단)은 은하 중심을 둘러싸고 훨씬 넓게 퍼져 있어요. 여름철 궁수자리·전갈자리 쪽에 구상성단이 많은 이유가 바로 이 방향에 은하 중심이 있기 때문이에요."
+    :"옆에서 보면 차이가 더 분명해요. 산개성단과 성운은 얇은 원반 안에 납작하게 붙어 있고, 구상성단은 원반 위아래로 공 모양의 헤일로를 이뤄요.";
+  document.getElementById("mapStats").hidden=true;void `
+    <div><b style="color:var(--oc)">${avg(oc).toLocaleString()}</b><span>산개성단 평균 거리(광년)</span></div>
+    <div><b style="color:var(--gc)">${avg(gc).toLocaleString()}</b><span>구상성단 평균 거리(광년)</span></div>
+    <div><b style="color:var(--oc)">${avgZ(oc).toLocaleString()}</b><span>산개성단, 원반에서 떨어진 높이(광년)</span></div>
+    <div><b style="color:var(--gc)">${avgZ(gc).toLocaleString()}</b><span>구상성단, 원반에서 떨어진 높이(광년)</span></div>`;
+}
+function setMode(m){mode=m;resetView();document.getElementById("viewTop").classList.toggle("primary",m==="top");document.getElementById("viewSide").classList.toggle("primary",m==="side");drawMap()}
+document.getElementById("viewTop").onclick=()=>setMode("top");
+document.getElementById("viewSide").onclick=()=>setMode("side");
+function nearest(e){const r=mc.getBoundingClientRect(),k=mc.width/r.width;const x=(e.clientX-r.left)*k,y=(e.clientY-r.top)*k;let best=null,bd=18*k;for(const p of pts){if(!p.vis)continue;const dd=Math.hypot(p.px-x,p.py-y);if(dd<bd){bd=dd;best=p}}return {best,r}}
+mc.addEventListener("mousemove",e=>{const {best,r}=nearest(e);if(!best){tip.hidden=true;return}tip.hidden=false;tip.textContent=`${best.d.id} ${best.d.ko!==best.d.id?best.d.ko:""} · ${TYPES[best.d.t].ko}`;const k=r.width/mc.width;let lx=best.px*k+12,ly=best.py*k-30;if(lx>r.width-200)lx=best.px*k-210;tip.style.left=lx+"px";tip.style.top=Math.max(4,ly)+"px"});
+mc.addEventListener("mouseleave",()=>tip.hidden=true);
+function canvasPt(e){const r=mc.getBoundingClientRect(),k=mc.width/r.width;return [(e.clientX-r.left)*k,(e.clientY-r.top)*k]}
+mc.addEventListener("wheel",e=>{e.preventDefault();const [x,y]=canvasPt(e);zoomAt(e.deltaY<0?1.2:1/1.2,x,y)},{passive:false});
+const ptrs=new Map();let dragged=false,pinch0=null,moved=0;
+mc.addEventListener("pointerdown",e=>{try{mc.setPointerCapture(e.pointerId)}catch(_){}ptrs.set(e.pointerId,canvasPt(e));if(ptrs.size===1){moved=0;dragged=false}if(ptrs.size===2){const [a,b]=[...ptrs.values()];pinch0={d:Math.hypot(a[0]-b[0],a[1]-b[1])||1,k:view.k}}});
+mc.addEventListener("pointermove",e=>{if(!ptrs.has(e.pointerId))return;const p=canvasPt(e),prev=ptrs.get(e.pointerId);ptrs.set(e.pointerId,p);
+  if(ptrs.size===2&&pinch0){const [a,b]=[...ptrs.values()];const d=Math.hypot(a[0]-b[0],a[1]-b[1]);zoomAt((pinch0.k*d/pinch0.d)/view.k,(a[0]+b[0])/2,(a[1]+b[1])/2);dragged=true;tip.hidden=true;return}
+  const dx=p[0]-prev[0],dy=p[1]-prev[1];moved+=Math.abs(dx)+Math.abs(dy);
+  if(moved>6){dragged=true;tip.hidden=true;if(view.k>1){view.ox+=dx;view.oy+=dy;clampView();drawMap()}}});
+const endPtr=e=>{ptrs.delete(e.pointerId);if(ptrs.size<2)pinch0=null};
+mc.addEventListener("pointerup",endPtr);mc.addEventListener("pointercancel",endPtr);
+document.getElementById("zIn").onclick=()=>zoomAt(2,mc.width/2,mc.height/2);
+document.getElementById("zOut").onclick=()=>zoomAt(1/2,mc.width/2,mc.height/2);
+document.getElementById("zReset").onclick=()=>{resetView();drawMap()};
+document.getElementById("zSun").onclick=()=>{const W=mc.width,H=mc.height,cx=W/2,cy=H/2,sc=W/2/EXTENT;const wx=mode==="top"?cx:cx-R0*sc,wy=mode==="top"?cy+R0*sc:cy;view.k=30;view.ox=W/2-30*wx;view.oy=H/2-30*wy;clampView();drawMap()};
+mc.addEventListener("click",e=>{if(dragged){dragged=false;return}const {best}=nearest(e);if(best){highlight=best.d.i;drawMap();openDetail(best.d.i)}});
+document.getElementById("legend").innerHTML=Object.entries(TYPES).map(([k,v])=>`<span><i style="background:var(${v.c})"></i>${v.ko}</span>`).join("");
+
+/* ---------- 지도: 천체 골라 보기 ---------- */
+const picked=new Set();let dimOthers=false,mRes=[];
+function matchQ(d,q){q=q.trim().toLowerCase().replace(/\s/g,"");return !q||(d.id+d.ko+d.en+CON[d.con]+TYPES[d.t].ko).toLowerCase().replace(/\s/g,"").includes(q)}
+const nm=d=>d.ko!==d.id?d.id+" "+d.ko:d.id;
+function renderPick(){
+  mRes=DATA.filter(d=>matchQ(d,document.getElementById("mq").value));
+  document.getElementById("mList").innerHTML=mRes.length?mRes.map(d=>`<li><label><input type="checkbox" data-i="${d.i}" ${picked.has(d.i)?"checked":""}><span class="dot" style="background:var(${TYPES[d.t].c})"></span>${nm(d)}<span class="t">${TYPES[d.t].ko}</span></label></li>`).join(""):`<li class="none">찾는 천체가 없어요. 다른 이름이나 분류로 검색해 보세요.</li>`;
+  const allOn=mRes.length&&mRes.every(d=>picked.has(d.i));
+  const ab=document.getElementById("mAll");ab.textContent=allOn?"결과 모두 해제":"결과 모두 체크";ab.disabled=!mRes.length;
+  document.getElementById("mCount").textContent=`선택한 천체 ${picked.size}개`;
+  document.getElementById("mChips").innerHTML=picked.size?[...picked].map(i=>{const d=DATA[i];return `<button class="pchip" data-i="${i}" style="--c:var(${TYPES[d.t].c})" aria-label="${d.ko} 선택 해제">${nm(d)} <span>×</span></button>`}).join(""):`<span style="font-size:13px;color:var(--dim)">아직 선택한 천체가 없어요. 지금은 모든 천체가 보여요.</span>`;
+  document.getElementById("mFit").disabled=!picked.size;document.getElementById("mClear").disabled=!picked.size;
+}
+function togglePick(i,on){on?picked.add(i):picked.delete(i);if(!on&&highlight===i)highlight=null;renderPick();drawMap()}
+document.getElementById("mq").addEventListener("input",renderPick);
+document.getElementById("mList").addEventListener("change",e=>{const i=Number(e.target.dataset.i);if(!Number.isNaN(i))togglePick(i,e.target.checked)});
+document.getElementById("mChips").addEventListener("click",e=>{const b=e.target.closest(".pchip");if(b)togglePick(Number(b.dataset.i),false)});
+document.getElementById("mAll").onclick=()=>{const allOn=mRes.every(d=>picked.has(d.i));mRes.forEach(d=>allOn?picked.delete(d.i):picked.add(d.i));renderPick();drawMap()};
+document.getElementById("mClear").onclick=()=>{picked.clear();highlight=null;renderPick();drawMap()};
+document.getElementById("mDim").onchange=e=>{dimOthers=e.target.checked;drawMap()};
+document.getElementById("mFit").onclick=()=>{
+  if(!picked.size)return;const W=mc.width,H=mc.height,sc=W/2/EXTENT;
+  const ps=[...picked].map(i=>worldOf(DATA[i]));ps.push(mode==="top"?[W/2,H/2+R0*sc]:[W/2-R0*sc,H/2]);
+  const xs=ps.map(p=>p[0]),ys=ps.map(p=>p[1]),x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys);
+  const k=Math.min(100,Math.max(1,0.75*Math.min(W/Math.max(x1-x0,1),H/Math.max(y1-y0,1))));
+  view.k=k;view.ox=W/2-k*(x0+x1)/2;view.oy=H/2-k*(y0+y1)/2;clampView();drawMap();
+};
+
+/* ---------- 탭 ---------- */
+function showView(v){
+  document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.view===v));
+  for(const k of ["atlas","map"])document.getElementById("view-"+k).hidden=k!==v;
+  if(v==="map")drawMap();
+  try{localStorage.setItem("dso-view",v)}catch(e){}
+}
+document.querySelectorAll("nav.tabs button").forEach(b=>b.onclick=()=>showView(b.dataset.view));
+
+buildChips();render();renderPick();
+let start="atlas";try{start=localStorage.getItem("dso-view")||"atlas"}catch(e){}
+if(start!=="map")start="atlas";
+if(location.hash&&["atlas","map"].includes(location.hash.slice(1)))start=location.hash.slice(1);
+showView(start);
+document.fonts&&document.fonts.ready.then(()=>{if(!document.getElementById("view-map").hidden)drawMap()});
+</script>
+
+</body>
+</html>
